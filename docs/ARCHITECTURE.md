@@ -1,21 +1,18 @@
 # Arquitetura
 
 ```text
-TSE CDN (JSON) -> Coletor planejado -> Normalização -> Cache/snapshots
-                                                       |
-Browser -> Nginx -> Fastify /api ----------------------+
+Arquivos JSON do TSE -> Coleta -> Normalização -> Armazenamento temporário e histórico
+                                                   |
+Navegador -> Nginx -> Servidor Fastify /api --------+
 ```
 
-Um único coletor por implantação. Polling sem WebSocket no MVP. Dois contêineres (API e frontend/Nginx). Exibir horário oficial, última coleta bem-sucedida e estado desatualizado separadamente. Preservar último dado válido em falhas. Futuro SQLite em volume persistente.
+A aplicação consulta os arquivos do TSE periodicamente e apresenta as informações em português do Brasil. O sistema mantém o último dado válido e identifica resultados desatualizados.
 
-## Endpoints implementados
-- GET /api/health
-- GET /api/status
+## Endereços disponíveis
+- `GET /api/health`: estado do serviço
+- `GET /api/status`: estado da coleta
+- `GET /api/results?office=governador`: resultados
+- `GET /api/history?office=governador`: histórico
+- `GET /api/groups`: grupos políticos
 
-## Planejados
-- GET /api/elections
-- GET /api/municipalities?uf=CE
-- GET /api/results?municipality=...&office=...
-- GET /api/history?municipality=...&office=...
-
-O Nginx mantém frontend e API na mesma origem.
+Os nomes dos endereços e das propriedades internas permanecem em inglês por compatibilidade técnica; todos os textos voltados aos usuários ficam em português brasileiro.

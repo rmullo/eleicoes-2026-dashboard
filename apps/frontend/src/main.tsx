@@ -68,7 +68,7 @@ function App() {
     }catch(e){setError(String(e));}
   }
   return <main>
-    <header><div><span className="eyebrow">PAINEL ELEITORAL · 1º TURNO</span><h1>Eleições 2026</h1><p>Farias Brito · Ceará</p></div><a href="https://resultados.tse.jus.br" target="_blank" rel="noreferrer">Fonte: TSE ↗</a></header>
+    <header><div><span className="eyebrow">ACOMPANHAMENTO ELEITORAL · 1º TURNO</span><h1>Eleições 2026</h1><p>Farias Brito · Ceará</p></div><a href="https://resultados.tse.jus.br" target="_blank" rel="noreferrer">Dados oficiais: TSE ↗</a></header>
     <section className="summary">
       <div><small>Estado da coleta</small><strong>{status?.state??'Conectando'}</strong></div>
       <div><small>Seções totalizadas</small><strong>{percentage(result?.sections.percent??null)}</strong></div>

@@ -7,8 +7,8 @@ Fonte: https://www.tse.jus.br/eleicoes/informacoes-tecnicas-sobre-a-divulgacao-d
 - EA20 para os cargos 1, 3, 5, 6 e 7.
 - Eleição federal 6257 (presidente), estadual 6259 (demais cargos).
 - Requisições condicionais HTTP (ETag e Last-Modified).
-- Intervalo mínimo de 30 segundos, cache, snapshots persistidos, timeout.
-- Interrupção definitiva de URL com 404, backoff em 429/5xx.
+- Intervalo mínimo de 30 segundos, armazenamento temporário, registros históricos persistidos e tempo limite de resposta.
+- Interrupção definitiva de URL com 404, intervalo progressivo entre tentativas em 429/5xx.
 - Falhas explicitadas; últimos dados preservados e marcados como desatualizados.
 
 ## Validação pendente antes de uso em produção
