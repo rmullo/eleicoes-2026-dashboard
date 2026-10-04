@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: apps/backend/Dockerfile
     env_file: .env
+    volumes:
+      - election-data:/app/data
     restart: unless-stopped
     expose:
       - "3000"
@@ -16,3 +18,5 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+volumes:
+  election-data:

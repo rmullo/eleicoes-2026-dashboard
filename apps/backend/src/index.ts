@@ -1,20 +1,21 @@
 import Fastify from 'fastify';
+import { getHistory, getResult, getStatus, startCollector, validOffice } from './tse.js';
 
 const app = Fastify({ logger: true });
-const startedAt = new Date().toISOString();
-
-app.get('/api/health', async () => ({ status: 'ok', startedAt }));
-app.get('/api/status', async () => ({
-  source: 'TSE',
-  municipality: process.env.TSE_MUNICIPALITY ?? 'Farias Brito',
-  state: process.env.TSE_UF ?? 'ce',
-  status: 'integration_pending',
-  message: 'Official TSE JSON ingestion has not been implemented or validated.',
-  lastSuccessfulFetch: null,
-}));
-
-const port = Number(process.env.PORT ?? 3000);
-app.listen({ port, host: '0.0.0.0' }).catch((error) => {
-  app.log.error(error);
-  process.exit(1);
+app.get('/api/health', async () => ({ status: 'ok' }));
+app.get('/api/status', async () => getStatus());
+app.get<{ Querystring: { office?: string } }>('/api/results', async (request, reply) => {
+  const office = request.query.office ?? 'governador';
+  if (!validOffice(office)) return reply.code(400).send({ error: 'Cargo inválido' });
+  const data = getResult(office);
+  if (!data) return reply.code(503).send({ error: 'Resultado oficial ainda não disponível', status: getStatus() });
+  return { ...data, stale: getStatus().stale };
 });
+app.get<{ Querystring: { office?: string } }>('/api/history', async (request, reply) => {
+  const office = request.query.office ?? 'governador';
+  if (!validOffice(office)) return reply.code(400).send({ error: 'Cargo inválido' });
+  return { office, snapshots: getHistory(office) };
+});
+const port = Number(process.env.PORT ?? 3000);
+await startCollector();
+await app.listen({ port, host: '0.0.0.0' });

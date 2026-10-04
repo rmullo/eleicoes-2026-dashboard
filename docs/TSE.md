@@ -1,18 +1,25 @@
-# Integração oficial TSE — plano
+# Integração com TSE — versão inicial
 
-**Não implementada.** Validar documentos antes de assumir formatos ou URLs.
+Fonte: https://www.tse.jus.br/eleicoes/informacoes-tecnicas-sobre-a-divulgacao-de-resultados
 
-- https://www.tse.jus.br/eleicoes/informacoes-tecnicas-sobre-a-divulgacao-de-resultados
-- https://www.tse.jus.br/eleicoes/eleicoes-2026-content/arquivos/divulgacao-de-resultados
+## Implementado
+- EA12 para identificação do município (ou `TSE_MUNICIPALITY_CODE` de cinco dígitos).
+- EA20 para os cargos 1, 3, 5, 6 e 7.
+- Eleição federal 6257 (presidente), estadual 6259 (demais cargos).
+- Requisições condicionais HTTP (ETag e Last-Modified).
+- Intervalo mínimo de 30 segundos, cache, snapshots persistidos, timeout.
+- Interrupção definitiva de URL com 404, backoff em 429/5xx.
+- Falhas explicitadas; últimos dados preservados e marcados como desatualizados.
 
-Parâmetros de referência para 04/10/2026: pleito 3220, eleição federal 6257 e estaduais 6259. Município com código de cinco dígitos, a verificar na EA12. O teto de 100 requisições/IP/s não é frequência recomendada.
+## Validação pendente antes de uso em produção
+A execução contra a CDN oficial, os formatos exatos dos arquivos EA12/EA20 e o mapeamento de campos precisam ser testados com arquivos reais de 2026. A API rejeita estruturas inesperadas em vez de apresentar votos fictícios. Verificar também o manual de assinaturas JWS e a consistência dos campos de seções antes de declarar resultados verificados.
 
-## Checklist
-1. Conferir EA11 (eleições), EA12 (municípios) e EA20 (resultados).
-2. Validar o código de Farias Brito e as URLs oficiais.
-3. Criar testes com JSON reais.
-4. Implementar ETag, Last-Modified, timeout e backoff em 404/429/5xx.
-5. Normalizar cargos, votos, candidatos e seções.
-6. Verificar JWS conforme manual aplicável.
-7. Separar data oficial, última coleta e stale.
-8. Não transformar ausência de dados em zero nem inferir vencedores.
+O TSE alerta que requisições 404 repetidas podem bloquear IPs; portanto não testar por tentativa e erro em produção. O limite de 100 requisições por segundo não é uma recomendação de frequência.
+
+## Endpoints
+- `GET /api/health`
+- `GET /api/status`
+- `GET /api/results?office=governador`
+- `GET /api/history?office=governador`
+
+Cargos: `presidente`, `governador`, `senador`, `deputado-federal`, `deputado-estadual`.

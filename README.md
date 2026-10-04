@@ -1,31 +1,33 @@
-# Eleições Dashboard 2026
+# Eleições 2026 Dashboard
 
-Dashboard **independente, não oficial**, inicialmente para Farias Brito (CE). Monorepo React + Fastify + TypeScript + Docker Compose.
-
-> **Estado: esqueleto funcional.** A API e o frontend sobem, mas a coleta dos dados do TSE **ainda não está implementada**. Não são exibidos votos fictícios.
+Dashboard **independente, não oficial**, com foco em Farias Brito (CE), alimentado pelos JSON públicos do TSE. Monorepo Node.js/Fastify + React/Vite, TypeScript e Docker Compose.
 
 ## Executar
-Requer Docker e Compose v2.
+Requisitos: Docker + Compose v2.
+
 ```bash
 cp .env.example .env
 docker compose up -d --build
 ```
-Painel: http://localhost:8080 · API: /api/health e /api/status.
+
+Abra http://localhost:8080. A API responde em `/api/status`, `/api/results?office=governador`, `/api/history?office=governador` e `/api/health`.
+
+## Recursos
+- Coleta a cada 30 s (mínimo), consulta visual a cada 5 s.
+- Cinco cargos: presidente, governador, senador, deputado federal e estadual.
+- Filtros por nome, número e partido; favoritos guardados no navegador.
+- Cache condicional, timeout, backoff e proteção contra 404 repetidos.
+- Histórico persistido em volume Docker e indicação de dados desatualizados.
+- Dados ausentes não são substituídos por números fictícios.
 
 ## Estrutura
-- `apps/backend`: Fastify, futura coleta e cache.
-- `apps/frontend`: React/Vite e Nginx.
-- `packages/shared`: contratos futuros.
-- `docs/`: arquitetura, integração TSE, operação e roadmap.
+- `apps/backend`: coletor TSE e API Fastify.
+- `apps/frontend`: dashboard React e Nginx.
+- `docs/`: arquitetura, integração, operação e roadmap.
 
-O frontend consulta a API a cada 5 s. **Não há coleta ativa do TSE ainda.** Coleta planejada a cada 30 s, ajustável, com cache, backoff e último dado válido.
+## Estado e limitações
+**A integração foi implementada, mas ainda não foi validada em execução real contra a CDN oficial de 2026.** Verificar o mapeamento EA12/EA20 e assinatura JWS antes de utilizar em produção ou divulgar dados. O frontend sinaliza erros e não inventa resultados. Não há vínculo com o TSE.
 
-## Fontes
-- https://www.tse.jus.br/eleicoes/informacoes-tecnicas-sobre-a-divulgacao-de-resultados
-- https://resultados.tse.jus.br
+Fonte: https://www.tse.jus.br/eleicoes/informacoes-tecnicas-sobre-a-divulgacao-de-resultados
 
-Nunca confundir ausência de dados com zero votos, nem apuração parcial com projeções. Não incluir credenciais. Projeto sem vínculo com a Justiça Eleitoral.
-
-Veja [Arquitetura](docs/ARCHITECTURE.md), [Integração](docs/TSE.md), [Operação](docs/OPERATIONS.md), [Roadmap](docs/ROADMAP.md) e [Contribuições](CONTRIBUTING.md).
-
-**Licença:** a definir pelo mantenedor.
+Licença a definir pelo mantenedor.
