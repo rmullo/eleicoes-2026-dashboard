@@ -1,0 +1,1 @@
+{"name":"eleicoes-dashboard","private":true,"version":"0.1.0","workspaces":["apps/*","packages/*"],"scripts":{"dev:api":"npm run dev -w @eleicoes/backend","dev:web":"npm run dev -w @eleicoes/frontend","build":"npm run build -w @eleicoes/backend && npm run build -w @eleicoes/frontend"},"engines":{"node":">=22"}}
