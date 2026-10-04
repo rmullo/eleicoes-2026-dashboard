@@ -6,6 +6,13 @@ type Result = { office: string; candidates: Candidate[]; sections: { total: numb
 type Status = { state: string; lastSuccess: string | null; stale: boolean; error: string | null; municipalityCode: string | null };
 type Group = { id: string; name: string; color: string; description: string; candidates: Record<string,string[]> };
 const offices = [['presidente','Presidente'],['governador','Governador'],['senador','Senador'],['deputado-federal','Deputado federal'],['deputado-estadual','Deputado estadual']];
+const statusLabels: Record<string,string> = {
+  starting: 'Iniciando coleta',
+  waiting: 'Aguardando dados do TSE',
+  live: 'Atualizado',
+  degraded: 'Atualização com problemas',
+  configuration_error: 'Erro de configuração'
+};
 const format = (n: number | null) => n === null ? '—' : new Intl.NumberFormat('pt-BR').format(n);
 const percentage = (n: number | null) => n === null ? '—' : n.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '%';
 async function json(url:string,init?:RequestInit) { const r=await fetch(url,init); if(!r.ok) throw new Error((await r.text()).slice(0,180)); return r.json(); }
@@ -70,7 +77,7 @@ function App() {
   return <main>
     <header><div><span className="eyebrow">ACOMPANHAMENTO ELEITORAL · 1º TURNO</span><h1>Eleições 2026</h1><p>Farias Brito · Ceará</p></div><a href="https://resultados.tse.jus.br" target="_blank" rel="noreferrer">Dados oficiais: TSE ↗</a></header>
     <section className="summary">
-      <div><small>Estado da coleta</small><strong>{status?.state??'Conectando'}</strong></div>
+      <div><small>Estado da coleta</small><strong>{status ? (statusLabels[status.state] ?? 'Estado desconhecido') : 'Conectando'}</strong></div>
       <div><small>Seções totalizadas</small><strong>{percentage(result?.sections.percent??null)}</strong></div>
       <div><small>Última coleta válida</small><strong>{status?.lastSuccess?new Date(status.lastSuccess).toLocaleTimeString('pt-BR'):'—'}</strong></div>
     </section>
