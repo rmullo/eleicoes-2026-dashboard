@@ -26,6 +26,7 @@ let lastAttempt: string | null = null;
 let error: string | null = null;
 let busy = false;
 let retryAfter = 0;
+let municipalityCodeForValidation: string | null = null;
 const store = process.env.DATA_DIR || '/app/data';
 
 const obj = (v: unknown): Any => v && typeof v === 'object' && !Array.isArray(v) ? v as Any : {};
@@ -41,7 +42,7 @@ const code = (v: string, size: number) => v.padStart(size, '0');
 const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 async function fetchJson(path: string): Promise<unknown> {
-  if (blocked.has(path)) throw new Error('URL desabilitada após erro 404: ' + path);
+  if (blocked.has(path)) throw new Error('Arquivo ainda não disponibilizado pelo TSE: ' + path);
   const cached = httpCache.get(path);
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (cached?.etag) headers['If-None-Match'] = cached.etag;
@@ -49,7 +50,7 @@ async function fetchJson(path: string): Promise<unknown> {
   const response = await fetch(base + path, { headers, signal: AbortSignal.timeout(12000) });
   if (response.status === 304 && cached) return cached.data;
   if (response.status === 404) {
-    blocked.add(path); throw new Error('Arquivo TSE indisponível (404): ' + path);
+    blocked.add(path); throw new Error('Arquivo ainda não disponibilizado pelo TSE (404): ' + path);
   }
   if (response.status === 429 || response.status >= 500) {
     retryAfter = Date.now() + 120000;
@@ -78,10 +79,38 @@ function parse(raw: unknown, office: typeof offices[number], source: string): Re
   const cargos = Array.isArray(doc.carg) ? doc.carg : [];
   const cargo = cargos.map(obj).find(c => Number(text(c, 'cd')) === Number(office.code));
   if (!cargo) throw new Error('Cargo ausente no EA20: ' + office.id);
-  if (!Array.isArray(cargo.cand)) throw new Error('Candidatos ausentes no EA20: ' + office.id);
-  const candidates = cargo.cand.map((entry: unknown) => {
-    const c = obj(entry);
-    return { number: text(c, 'n', 'nr'), name: text(c, 'nm', 'nome'), party: text(c, 'cc', 'sgp', 'partido'), votes: num(pick(c, 'vap')), percent: num(pick(c, 'pvap')) };
+  // EA20: os candidatos estão em carg[].agr[].par[].cand[], e não diretamente em carg[].cand.
+  if (!Array.isArray(cargo.agr)) throw new Error('Agrupamentos ausentes no arquivo EA20: ' + office.id);
+  const candidates: Candidate[] = [];
+  for (const agrEntry of cargo.agr) {
+    const agr = obj(agrEntry);
+    if (!Array.isArray(agr.par)) continue;
+    for (const parEntry of agr.par) {
+      const party = obj(parEntry);
+      if (!Array.isArray(party.cand)) continue;
+      for (const entry of party.cand) {
+        const c = obj(entry);
+        const number = text(c, 'n');
+        const name = text(c, 'nm');
+        if (!number || !name) continue;
+        candidates.push({
+          number, name, party: text(party, 'sg'),
+          votes: num(c.vap), percent: num(c.pvap)
+        });
+      }
+    }
+  }
+  if (!candidates.length) throw new Error('Nenhum candidato identificado no arquivo EA20: ' + office.id);
+  candidates.sort((a, b) => (b.votes ?? -1) - (a.votes ?? -1));
+  const sections = obj(doc.s);
+  const total = num(sections.ts);
+  const counted = num(sections.st);
+  const percent = num(sections.pst);
+  if (total === null || counted === null || percent === null) throw new Error('Dados de seções ausentes no arquivo EA20: ' + office.id);
+  if (text(doc, 'tpabr') !== 'mu' || text(doc, 'cdabr').padStart(5, '0') !== municipalityCodeForValidation) {
+    throw new Error('Arquivo EA20 não corresponde ao município configurado.');
+  }
+  return { number: text(c, 'n', 'nr'), name: text(c, 'nm', 'nome'), party: text(c, 'cc', 'sgp', 'partido'), votes: num(pick(c, 'vap')), percent: num(pick(c, 'pvap')) };
   }).filter(c => c.name || c.number).sort((a, b) => (b.votes ?? -1) - (a.votes ?? -1));
   const total = num(pick(cargo, 's', 'st')) ?? num(pick(doc, 's', 'st'));
   const counted = num(pick(cargo, 'st', 's')) ?? num(pick(doc, 'st', 's'));
@@ -114,17 +143,18 @@ async function cycle() {
   lastAttempt = new Date().toISOString();
   try {
     if (!municipalityCode) {
-      const config = await fetchJson('/oficial/ele2026/6259/config/mun-e06259-cm.json');
+      const config = await fetchJson('/oficial/ele2026/6259/config/mun-e006259-cm.json');
       municipalityCode = findMunicipality(config);
       if (!municipalityCode) {
         state = 'configuration_error';
         throw new Error('Município não localizado no EA12; configure TSE_MUNICIPALITY_CODE com 5 dígitos.');
       }
     }
+    municipalityCodeForValidation = municipalityCode;
     let succeeded = 0;
     const failures: string[] = [];
     for (const office of offices) {
-      const path = `/oficial/ele2026/${office.election}/dados/${uf}/${uf}${municipalityCode}-c${code(office.code, 4)}-e${code(office.election, 5)}-u.json`;
+      const path = `/oficial/ele2026/${office.election}/dados/${uf}/${uf}${municipalityCode}-c${code(office.code, 4)}-e${code(office.election, 6)}-u.json`;
       try {
         const raw = await fetchJson(path);
         const result = parse(raw, office, base + path);
@@ -141,7 +171,7 @@ async function cycle() {
       lastSuccess = new Date().toISOString();
       state = failures.length ? 'degraded' : 'live';
     } else state = results.size ? 'degraded' : 'waiting';
-    error = failures.length ? failures.join('; ').slice(0, 1000) : null;
+    error = failures.length && (succeeded || failures.some(f => !f.includes('ainda não disponibilizado'))) ? failures.join('; ').slice(0, 1000) : null;
   } catch (e) {
     error = String(e);
     if (state !== 'configuration_error') state = results.size ? 'degraded' : 'waiting';
