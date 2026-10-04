@@ -1,33 +1,28 @@
 # Eleições 2026 Dashboard
 
-Dashboard **independente, não oficial**, com foco em Farias Brito (CE), alimentado pelos JSON públicos do TSE. Monorepo Node.js/Fastify + React/Vite, TypeScript e Docker Compose.
+Dashboard **independente, não oficial**, com foco em Farias Brito (CE), baseado nos JSON públicos do TSE. Monorepo Node.js/Fastify + React/Vite, TypeScript e Docker Compose.
 
 ## Executar
-Requisitos: Docker + Compose v2.
-
 ```bash
 cp .env.example .env
 docker compose up -d --build
 ```
-
-Abra http://localhost:8080. A API responde em `/api/status`, `/api/results?office=governador`, `/api/history?office=governador` e `/api/health`.
+Abra http://localhost:8080. API em `/api/status`, `/api/results?office=governador`, `/api/history?office=governador`, `/api/groups` e `/api/health`.
 
 ## Recursos
-- Coleta a cada 30 s (mínimo), consulta visual a cada 5 s.
-- Cinco cargos: presidente, governador, senador, deputado federal e estadual.
-- Filtros por nome, número e partido; favoritos guardados no navegador.
-- Cache condicional, timeout, backoff e proteção contra 404 repetidos.
-- Histórico persistido em volume Docker e indicação de dados desatualizados.
-- Dados ausentes não são substituídos por números fictícios.
+- Cinco cargos, filtros por candidato, número, partido e grupo.
+- Flags personalizadas: nome, cor e descrição de grupos políticos regionais.
+- Vários grupos por candidato e totalização **por cargo**, sem inferir votos exclusivos dos grupos.
+- Grupos e histórico persistidos em volume Docker.
+- Coleta periódica com ETag, Last-Modified, timeout, backoff e sinalização de dados desatualizados.
 
-## Estrutura
-- `apps/backend`: coletor TSE e API Fastify.
-- `apps/frontend`: dashboard React e Nginx.
-- `docs/`: arquitetura, integração, operação e roadmap.
+## Atenção
+**A coleta ainda não foi homologada contra arquivos reais de 2026.** Conferir EA12/EA20 e JWS antes de divulgar resultados. Dados ausentes não são inventados.
 
-## Estado e limitações
-**A integração foi implementada, mas ainda não foi validada em execução real contra a CDN oficial de 2026.** Verificar o mapeamento EA12/EA20 e assinatura JWS antes de utilizar em produção ou divulgar dados. O frontend sinaliza erros e não inventa resultados. Não há vínculo com o TSE.
+**Segurança:** a API de gerenciamento de grupos ainda **não tem autenticação**. Não exponha este sistema publicamente com edição habilitada antes de adicionar autenticação/autorização. Recomenda-se implantação apenas em rede privada nesta versão.
+
+Documentação: [Grupos](docs/GROUPS.md), [TSE](docs/TSE.md), [Arquitetura](docs/ARCHITECTURE.md), [Operação](docs/OPERATIONS.md), [Roadmap](docs/ROADMAP.md).
 
 Fonte: https://www.tse.jus.br/eleicoes/informacoes-tecnicas-sobre-a-divulgacao-de-resultados
 
-Licença a definir pelo mantenedor.
+Sem vínculo com a Justiça Eleitoral. Licença a definir pelo mantenedor.
