@@ -87,7 +87,9 @@ function collectCandidates(cargo: Any): Candidate[] {
   const add = (entry: unknown, party = '') => {
     const c = obj(entry);
     const number = text(c, 'n', 'nr');
-    const name = text(c, 'nm', 'nome');
+    // No EA20, "nm" é o nome de urna (nome público do candidato).
+    // Outros campos são apenas alternativas para formatos compatíveis.
+    const name = text(c, 'nm', 'nmu', 'nmurna', 'nomeUrna', 'nome');
     if (!number || !name) return;
     const candidate: Candidate = {
       number,
