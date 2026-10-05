@@ -87,9 +87,9 @@ function collectCandidates(cargo: Any): Candidate[] {
   const add = (entry: unknown, party = '') => {
     const c = obj(entry);
     const number = text(c, 'n', 'nr');
-    // No EA20, "nm" é o nome de urna (nome público do candidato).
-    // Outros campos são apenas alternativas para formatos compatíveis.
-    const name = text(c, 'nm', 'nmu', 'nmurna', 'nomeUrna', 'nome');
+    // EA20: "nmu" = nome de urna; "nm" = nome completo.
+    // O painel deve exibir o nome de urna e usar o nome completo apenas como fallback.
+    const name = text(c, 'nmu', 'nmurna', 'nomeUrna', 'nm', 'nome');
     if (!number || !name) return;
     const candidate: Candidate = {
       number,
